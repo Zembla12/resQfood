@@ -115,4 +115,25 @@ public class BasketService implements IService<Basket> {
         }
         return BasketsList;
     }
+
+
+    public List<Integer> getAllBasketIds() {
+        List<Integer> basketIds = new ArrayList<>();
+
+        String req = "SELECT `basket_id` FROM `basket` WHERE 1";
+        try {
+            Statement st = cnx.createStatement();
+            ResultSet res = st.executeQuery(req);
+
+            while (res.next()) {
+                int basket_id = res.getInt("basket_id");
+                basketIds.add(basket_id);
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return basketIds;
+    }
+
+
 }

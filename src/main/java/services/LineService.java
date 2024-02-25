@@ -94,7 +94,7 @@ public class LineService implements IService<Line> {
     public List<Line> getAll() {
         List<Line> linesList = new ArrayList<>();
 
-        String req = "SELECT * FROM line WHERE 1";
+        String req = "SELECT * FROM line";
         try {
             Statement st = cnx.createStatement();
             ResultSet res = st.executeQuery(req);
@@ -113,4 +113,6 @@ public class LineService implements IService<Line> {
         }
         return linesList;
     }
+
+
 }

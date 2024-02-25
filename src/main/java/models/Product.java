@@ -55,6 +55,7 @@ public class Product {
         this.expirationDate = expirationDate;
     }
 
+
     @Override
     public String toString() {
         return "Product{" +
