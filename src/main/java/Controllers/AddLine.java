@@ -41,33 +41,35 @@ public class AddLine {
 
     @FXML
     void initialize() throws SQLException {
+
             // Populate the ChoiceBoxes with data
             List<String> productNames = productService.getAllProductNames();
             List<Integer> basketIds = basketService.getAllBasketIds(); // Assuming you want basket IDs
 
             nameCB.getItems().addAll(productNames);
             basketCB.getItems().addAll(basketIds.stream().map(Object::toString).toList());
-            // Convert basket IDs to strings for display
-        System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        productName.setCellValueFactory(new PropertyValueFactory<>("productName"));
-        productQuantity.setCellValueFactory(new PropertyValueFactory<>("productQuantity"));
-        BasketId.setCellValueFactory(new PropertyValueFactory<>("basketId"));
-        System.out.println("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzza");
 
-        // Load existing lines into the table
-        loadLinesIntoTable();
+            // Convert basket IDs to strings for display
+            productName.setCellValueFactory(new PropertyValueFactory<>("name")); // Assuming you have a getName() method in Line class
+            productQuantity.setCellValueFactory(new PropertyValueFactory<>("lineQuantity"));
+            BasketId.setCellValueFactory(new PropertyValueFactory<>("basketId"));
+
+            // Load existing lines into the table
+            loadLinesIntoTable();
         }
+
+
     private void loadLinesIntoTable() throws SQLException {
         // Retrieve lines data from the database
         List<Line> linesList = lineService.getAll();
         System.out.println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
         List<Product> productList = new ArrayList<>();
-        for(int i=0;i<linesList.size();i++)
-        {
-           linesList.get(i).setName(productService.read(linesList.get(i).getProductId()).getProductName());
-           linesList.get(i).toString();
+        for (int i = 0; i < linesList.size(); i++) {
+            linesList.get(i).setName(productService.read(linesList.get(i).getProductId()).getProductName());
+            linesList.get(i).toString();
             System.out.println(linesList.get(i).toString());
         }
+
         System.out.println("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
         // Create an ObservableList to store the lines data
 
@@ -82,7 +84,7 @@ public class AddLine {
 
 
     @FXML
-    void addToBasket(ActionEvent event) {
+    void addToBasket(ActionEvent event) throws SQLException {
         // Get the selected values from the UI
         String selectedProductName = nameCB.getValue();
         String selectedBasketStatus = basketCB.getValue();
@@ -106,9 +108,13 @@ public class AddLine {
         // Add the new line to the basket
         lineService.ajouter(newLine);
 
+        // Refresh the TableView
+        loadLinesIntoTable();
+
         // Optionally, you can display a success message or update the UI
         System.out.println("Line added to the basket successfully.");
     }
+
 
     @FXML
     void rowClick(javafx.scene.input.MouseEvent mouseEvent) {

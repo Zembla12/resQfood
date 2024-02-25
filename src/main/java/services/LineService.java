@@ -105,13 +105,23 @@ public class LineService implements IService<Line> {
                 int basket_id = res.getInt("basket_id");
                 int product_id = res.getInt("product_id");
 
+                // Fetch the product name using ProductService
+                String productName = fetchProductName(product_id);
+
                 Line line = new Line(line_id, line_quantity, basket_id, product_id);
+                line.setName(productName); // Set the product name
                 linesList.add(line);
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
         return linesList;
+    }
+
+    // Helper method to fetch product name by id using ProductService
+    private String fetchProductName(int productId) {
+        ProductService productService = new ProductService();
+        return productService.getProductNameById(productId);
     }
 
 

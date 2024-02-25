@@ -11,6 +11,10 @@ public class Line {
 
     private String name;
 
+    public String getName() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -55,7 +59,7 @@ public class Line {
     @Override
     public String toString() {
         return "Line [line_id=" + line_id + ", line_quantity=" + line_quantity +
-                ", basket_id=" + basket_id + ", product_id=" + product_id + name+"]";
+                ", basket_id=" + basket_id + ", product_id=" + product_id + ", name=" + name + "]";
     }
 
 
