@@ -10,15 +10,12 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 
 import javafx.event.ActionEvent;
-import javafx.scene.control.TextField;
-import javafx.scene.control.DatePicker;
+import javafx.scene.control.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import models.Product;
 import services.ProductService;
@@ -63,7 +60,20 @@ public class ShowProduct {
         productName.setCellValueFactory(new PropertyValueFactory<>("productName"));
         productQuantity.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         productDOE.setCellValueFactory(new PropertyValueFactory<>("expirationDate"));
+
+        nameTF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("[a-zA-Z]*")) {
+                nameTF.setText(oldValue);
+            }
+        });
+
+        quantityTF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                quantityTF.setText(newValue.replaceAll("[^\\d]", ""));
+            }
+        });
     }
+
 
     @FXML
     public void navigate(javafx.event.ActionEvent actionEvent) {
@@ -95,29 +105,57 @@ public class ShowProduct {
         Product selectedProduct = productTable.getSelectionModel().getSelectedItem();
 
         if (selectedProduct != null) {
-            // Get the updated values from the text fields and date picker
-            String updatedName = nameTF.getText();
-            int updatedQuantity = Integer.parseInt(quantityTF.getText());
-            LocalDate updatedDate = doeDP.getValue();
-            java.sql.Date updatedSqlDate = java.sql.Date.valueOf(updatedDate);
+            try {
+                // Get the updated values from the text fields and date picker
+                String updatedName = nameTF.getText();
+                int updatedQuantity = Integer.parseInt(quantityTF.getText());
+                LocalDate updatedDate = doeDP.getValue();
+                java.sql.Date updatedSqlDate = java.sql.Date.valueOf(updatedDate);
 
-            // Create a new Product object with updated values
-            Product updatedProduct = new Product(
-                    selectedProduct.getProductId(), // Assuming there's a constructor that takes product ID
-                    updatedName,
-                    updatedQuantity,
-                    updatedSqlDate
-            );
+                // Create a new Product object with updated values
+                Product updatedProduct = new Product(
+                        selectedProduct.getProductId(), // Assuming there's a constructor that takes product ID
+                        updatedName,
+                        updatedQuantity,
+                        updatedSqlDate
+                );
 
-            // Use the modifier method to update the product
-            ps.modifier(updatedProduct);
+                // Use the modifier method to update the product
+                ps.modifier(updatedProduct);
 
-            // Refresh the table view with the updated data
-            List<Product> productList = ps.getAll();
-            ObservableList<Product> observableList = FXCollections.observableList(productList);
-            productTable.setItems(observableList);
+                // Refresh the table view with the updated data
+                List<Product> productList = ps.getAll();
+                ObservableList<Product> observableList = FXCollections.observableList(productList);
+                productTable.setItems(observableList);
+
+                showSuccessAlert("Product updated successfully!");
+
+            } catch (NumberFormatException e) {
+                showErrorAlert("Invalid quantity! Please enter a valid integer.");
+            } catch (Exception e) {
+                showErrorAlert("Error updating product: " + e.getMessage());
+            }
+        } else {
+            showErrorAlert("No product selected. Nothing updated.");
         }
     }
+
+    private void showSuccessAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Success");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showErrorAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
 
 
     @FXML
