@@ -77,11 +77,6 @@ public class AddLine {
 
     @FXML
     void addToBasket(ActionEvent event) throws SQLException {
-        if (!isEditable) {
-            System.out.println("Please press Update before adding a new line.");
-            return;
-        }
-
         // Get the selected values from the UI
         String selectedProductName = nameCB.getValue();
         String selectedBasketStatus = basketCB.getValue();
@@ -105,12 +100,20 @@ public class AddLine {
         // Add the new line to the basket
         lineService.ajouter(newLine);
 
+        // Check if the basket is not empty, set isEditable to true
+        if (lineTable.getItems().isEmpty()) {
+            isEditable = false;
+        } else {
+            isEditable = true;
+        }
+
         // Refresh the TableView
         loadLinesIntoTable();
 
         // Optionally, you can display a success message or update the UI
         System.out.println("Line added to the basket successfully.");
     }
+
 
     @FXML
     void rowClick(MouseEvent mouseEvent) {

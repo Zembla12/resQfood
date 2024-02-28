@@ -16,7 +16,7 @@
         <TextField fx:id="quantityTF" layoutX="69.0" layoutY="123.0" />
         <ChoiceBox fx:id="basketCB" layoutX="69.0" layoutY="187.0" prefWidth="150.0" />
         <Label layoutX="16.0" layoutY="191.0" text="Basket:" />
-        <Button layoutX="98.0" layoutY="244.0" mnemonicParsing="false" onAction="#addToBasket" text="Add to Basket" />
+        <Button layoutX="108.0" layoutY="244.0" mnemonicParsing="false" onAction="#addToBasket" text="Add to Basket" />
         <TableView fx:id="lineTable" layoutX="279.0" layoutY="67.0" onMouseClicked="#rowClick" prefHeight="200.0" prefWidth="260.0">
             <columns>
                 <TableColumn fx:id="productName" prefWidth="75.0" text="Name" />
@@ -24,7 +24,7 @@
                 <TableColumn fx:id="BasketId" prefWidth="103.19998168945312" text="Basket ID" />
             </columns>
         </TableView>
-      <Button layoutX="300.0" layoutY="321.0" mnemonicParsing="false" onAction="#deleteLine" text="Delete" />
+      <Button layoutX="72.0" layoutY="283.0" mnemonicParsing="false" onAction="#deleteLine" text="Delete" />
       <Button layoutX="34.0" layoutY="244.0" mnemonicParsing="false" onAction="#updateLine" text="Update" />
     </children>
 </AnchorPane>

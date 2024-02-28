@@ -16,22 +16,47 @@ public class ProductService implements IService<Product> {
     Connection cnx = MyDataBase.getInstance().getConnection();
 
     @Override
-    public void ajouter(Product product) //throws SQLException
-    {
+    public void ajouter(Product product) {
+        String selectQuery = "SELECT * FROM product WHERE product_name = ? AND expiration_date = ?";
+        String updateQuery = "UPDATE product SET quantity = ? WHERE product_name = ? AND expiration_date = ?";
+        String insertQuery = "INSERT INTO product (product_name, quantity, expiration_date) VALUES (?, ?, ?)";
 
-        String req = "INSERT INTO `product`(`product_name`, `quantity`, `expiration_date`) VALUES (?,?,?)";
         try {
-            PreparedStatement ps = cnx.prepareStatement(req);
-            ps.setString(1, product.getProductName());
-            ps.setInt(2, product.getQuantity());
-            ps.setDate(3, product.getExpirationDate());
+            // Check if the product with the same name and expiration date already exists
+            PreparedStatement selectStatement = cnx.prepareStatement(selectQuery);
+            selectStatement.setString(1, product.getProductName());
+            selectStatement.setDate(2, product.getExpirationDate());
 
-            ps.executeUpdate();
-            System.out.println("product added !");
+            ResultSet resultSet = selectStatement.executeQuery();
+
+            if (resultSet.next()) {
+                // Product already exists, update the quantity
+                int existingQuantity = resultSet.getInt("quantity");
+                int newQuantity = existingQuantity + product.getQuantity();
+
+                PreparedStatement updateStatement = cnx.prepareStatement(updateQuery);
+                updateStatement.setInt(1, newQuantity);
+                updateStatement.setString(2, product.getProductName());
+                updateStatement.setDate(3, product.getExpirationDate());
+
+                updateStatement.executeUpdate();
+            } else {
+                // Product doesn't exist, insert a new record
+                PreparedStatement insertStatement = cnx.prepareStatement(insertQuery);
+                insertStatement.setString(1, product.getProductName());
+                insertStatement.setInt(2, product.getQuantity());
+                insertStatement.setDate(3, product.getExpirationDate());
+
+                insertStatement.executeUpdate();
+            }
+
+            System.out.println("Product added/updated successfully!");
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error adding/updating product: " + e.getMessage());
         }
     }
+
+
 
     @Override
     public void modifier(Product product) {

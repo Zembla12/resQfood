@@ -11,20 +11,47 @@ public class LineService implements IService<Line> {
 
     @Override
     public void ajouter(Line line) {
-        String req = "INSERT INTO `line`(`line_id`, `line_quantity`, `basket_id`, `product_id`) VALUES (?,?,?,?)";
-        try {
-            PreparedStatement ps = cnx.prepareStatement(req);
-            ps.setInt(1, line.getLineId());
-            ps.setInt(2, line.getLineQuantity());
-            ps.setInt(3, line.getBasketId());
-            ps.setInt(4, line.getProductId());
+        String selectQuery = "SELECT * FROM line WHERE basket_id = ? AND product_id = ?";
+        String updateQuery = "UPDATE line SET line_quantity = ? WHERE basket_id = ? AND product_id = ?";
+        String insertQuery = "INSERT INTO line (line_id, line_quantity, basket_id, product_id) VALUES (?, ?, ?, ?)";
 
-            ps.executeUpdate();
-            System.out.println("Line added!");
+        try {
+            // Check if the line with the same basket_id and product_id already exists
+            PreparedStatement selectStatement = cnx.prepareStatement(selectQuery);
+            selectStatement.setInt(1, line.getBasketId());
+            selectStatement.setInt(2, line.getProductId());
+
+            ResultSet resultSet = selectStatement.executeQuery();
+
+            if (resultSet.next()) {
+                // Line already exists, update the line_quantity
+                int existingQuantity = resultSet.getInt("line_quantity");
+                int newQuantity = existingQuantity + line.getLineQuantity();
+
+                PreparedStatement updateStatement = cnx.prepareStatement(updateQuery);
+                updateStatement.setInt(1, newQuantity);
+                updateStatement.setInt(2, line.getBasketId());
+                updateStatement.setInt(3, line.getProductId());
+
+                updateStatement.executeUpdate();
+            } else {
+                // Line doesn't exist, insert a new record
+                PreparedStatement insertStatement = cnx.prepareStatement(insertQuery);
+                insertStatement.setInt(1, line.getLineId());
+                insertStatement.setInt(2, line.getLineQuantity());
+                insertStatement.setInt(3, line.getBasketId());
+                insertStatement.setInt(4, line.getProductId());
+
+                insertStatement.executeUpdate();
+            }
+
+            System.out.println("Line added/updated successfully!");
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error adding/updating line: " + e.getMessage());
         }
     }
+
+
 
     @Override
     public void modifier(Line line) {
