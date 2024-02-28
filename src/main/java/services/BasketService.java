@@ -1,6 +1,7 @@
 package services;
 
 import models.Basket;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +13,12 @@ public class BasketService implements IService<Basket> {
     @Override
     public void ajouter(Basket basket) {
 
-        String req = "INSERT INTO `basket`(`basket_status`, `user_id`, `event_id`) VALUES (?,?,?)";
+        String req = "INSERT INTO `basket`(`basket_status`, `user_id`, `confirmation_date`) VALUES (?,?,?)";
         try {
             PreparedStatement ps = cnx.prepareStatement(req);
             ps.setString(1, basket.getBasketStatus());
             ps.setInt(2, basket.getUserId());
-            ps.setInt(3, basket.getEventId());
+            ps.setDate(3, basket.getConfirmationDate());
 
             ps.executeUpdate();
             System.out.println("Basket added!");
@@ -28,7 +29,7 @@ public class BasketService implements IService<Basket> {
 
     @Override
     public void modifier(Basket basket) {
-        String req = "UPDATE `basket` SET `basket_status`=?, `user_id`=?, `event_id`=? WHERE basket_id=?";
+        String req = "UPDATE `basket` SET `basket_status`=?, `user_id`=?, `confirmation_date`=? WHERE basket_id=?";
 
         try {
             // Using PreparedStatement to prevent SQL injection
@@ -36,7 +37,7 @@ public class BasketService implements IService<Basket> {
 
             ps.setString(1, basket.getBasketStatus());
             ps.setInt(2, basket.getUserId());
-            ps.setInt(3, basket.getEventId());
+            ps.setDate(3, basket.getConfirmationDate());
             ps.setInt(4, basket.getBasketId());
 
             int rowCount = ps.executeUpdate();
@@ -75,7 +76,7 @@ public class BasketService implements IService<Basket> {
 
     @Override
     public Basket getOneById(int id) {
-        String req = "SELECT `basket_id`, `basket_status`, `user_id`, `event_id` FROM `basket` WHERE basket_id=?";
+        String req = "SELECT `basket_id`, `basket_status`, `user_id`, `confirmation_date` FROM `basket` WHERE basket_id=?";
 
         try (PreparedStatement ps = cnx.prepareStatement(req)) {
             ps.setInt(1, id);
@@ -83,9 +84,9 @@ public class BasketService implements IService<Basket> {
             if (res.next()) {
                 String basket_status = res.getString("basket_status");
                 int user_id = res.getInt("user_id");
-                int event_id = res.getInt("event_id");
+                Date confirmation_date = res.getDate("confirmation_date");
 
-                return new Basket(id, basket_status, user_id, event_id);
+                return new Basket(id, basket_status, user_id, confirmation_date);
             }
         } catch (SQLException e) {
             System.err.println("Error fetching basket by id: " + e.getMessage());
@@ -106,8 +107,8 @@ public class BasketService implements IService<Basket> {
                 int basket_id = res.getInt("basket_id");
                 String basket_status = res.getString("basket_status");
                 int user_id = res.getInt("user_id");
-                int event_id = res.getInt("event_id");
-                Basket r = new Basket(basket_id, basket_status, user_id, event_id);
+                Date confirmation_date = res.getDate("confirmation_date");
+                Basket r = new Basket(basket_id, basket_status, user_id, confirmation_date);
                 BasketsList.add(r);
             }
         } catch (SQLException e) {
@@ -115,7 +116,6 @@ public class BasketService implements IService<Basket> {
         }
         return BasketsList;
     }
-
 
     public List<Integer> getAllBasketIds() {
         List<Integer> basketIds = new ArrayList<>();
@@ -136,4 +136,23 @@ public class BasketService implements IService<Basket> {
     }
 
 
+    public List<Integer> getBasketIdsForUser(int userId) {
+        List<Integer> basketIds = new ArrayList<>();
+        String req = "SELECT `basket_id` FROM `basket` WHERE `user_id` = ?";
+
+        try (PreparedStatement ps = cnx.prepareStatement(req)) {
+            ps.setInt(1, userId);
+            ResultSet res = ps.executeQuery();
+
+            while (res.next()) {
+                int basket_id = res.getInt("basket_id");
+                basketIds.add(basket_id);
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return basketIds;
+    }
 }
+

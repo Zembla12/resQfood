@@ -4,10 +4,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import models.Line;
@@ -16,16 +13,27 @@ import services.BasketService;
 import services.LineService;
 import services.ProductService;
 
+import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AddLine {
 
-    public TableView<Line> lineTable;
-    public TableColumn<List, String> productName;
-    public TableColumn<List, Integer> productQuantity;
-    public TableColumn<List, Integer> BasketId;
+    @FXML
+    private TableView<Line> lineTable;
+
+    @FXML
+    private TableColumn<Line, String> productName;
+
+    @FXML
+    private TableColumn<Line, Integer> productQuantity;
+
+    @FXML
+    private TableColumn<Line, Integer> BasketId;
+
     @FXML
     private ChoiceBox<String> basketCB;
 
@@ -33,9 +41,12 @@ public class AddLine {
     private ChoiceBox<String> nameCB;
 
     @FXML
+    private ChoiceBox<String> userCB;
+
+    @FXML
     private TextField quantityTF;
 
-    private boolean isEditable = false; // Flag to track whether the fields are editable
+    private boolean isEditable = false;
 
     private final LineService lineService = new LineService();
     private final ProductService productService = new ProductService();
@@ -43,43 +54,70 @@ public class AddLine {
 
     @FXML
     void initialize() throws SQLException {
-        // Populate the ChoiceBoxes with data
         List<String> productNames = productService.getAllProductNames();
-        List<Integer> basketIds = basketService.getAllBasketIds(); // Assuming you want basket IDs
+        List<Integer> basketIds = basketService.getAllBasketIds();
 
         nameCB.getItems().addAll(productNames);
-        basketCB.getItems().addAll(basketIds.stream().map(Object::toString).toList());
+        userCB.getItems().addAll("1", "2");
 
-        // Convert basket IDs to strings for display
-        productName.setCellValueFactory(new PropertyValueFactory<>("name")); // Assuming you have a getName() method in Line class
+        // Set an event listener for userCB
+        userCB.setOnAction(event -> {
+            // Update basketCB based on the selected user
+            updateBasketChoiceBox(userCB.getValue());
+
+            // Load lines for the selected user
+            try {
+                loadLinesIntoTable(userCB.getValue());
+            } catch (SQLException e) {
+                System.err.println("Error loading lines for user: " + e.getMessage());
+            }
+        });
+
+        productName.setCellValueFactory(new PropertyValueFactory<>("name"));
         productQuantity.setCellValueFactory(new PropertyValueFactory<>("lineQuantity"));
         BasketId.setCellValueFactory(new PropertyValueFactory<>("basketId"));
 
-        // Load existing lines into the table
+        // Load lines and initial values
         loadLinesIntoTable();
     }
 
+    private void updateBasketChoiceBox(String selectedUserId) {
+        // Clear existing items
+        basketCB.getItems().clear();
+
+        // Get the corresponding basketIds for the selected user
+        List<Integer> basketIdsForUser = basketService.getBasketIdsForUser(Integer.parseInt(selectedUserId));
+
+        // Add basketIds to basketCB
+        basketCB.getItems().addAll(basketIdsForUser.stream().map(Object::toString).toList());
+    }
+
     private void loadLinesIntoTable() throws SQLException {
-        // Retrieve lines data from the database
-        List<Line> linesList = lineService.getAll();
+        // Load lines for the default user (assuming "1" as default)
+        loadLinesIntoTable("1");
+    }
+
+    private void loadLinesIntoTable(String selectedUserId) throws SQLException {
+        List<Line> linesList = lineService.getLinesForUser(Integer.parseInt(selectedUserId));
         List<Product> productList = new ArrayList<>();
+
         for (int i = 0; i < linesList.size(); i++) {
             linesList.get(i).setName(productService.read(linesList.get(i).getProductId()).getProductName());
             linesList.get(i).toString();
         }
 
-        // Create an ObservableList to store the lines data
         ObservableList<Line> observableLinesList = FXCollections.observableList(linesList);
 
-        // Load data into the TableView
         lineTable.setItems(observableLinesList);
     }
+
 
     @FXML
     void addToBasket(ActionEvent event) throws SQLException {
         // Get the selected values from the UI
         String selectedProductName = nameCB.getValue();
         String selectedBasketStatus = basketCB.getValue();
+        String selectedUserId = userCB.getValue();
         int quantity;
 
         try {
@@ -94,8 +132,11 @@ public class AddLine {
         int productId = productService.getProductIdByName(selectedProductName);
         int basketId = Integer.parseInt(selectedBasketStatus);
 
-        // Create a new Line object
-        Line newLine = new Line(0, quantity, basketId, productId);
+        // Set the line_date to the current date
+        Date currentDate = Date.valueOf(LocalDate.now());
+
+        // Create a new Line object with the current date
+        Line newLine = new Line(0, quantity, basketId, productId, Integer.parseInt(selectedUserId), currentDate);
 
         // Add the new line to the basket
         lineService.ajouter(newLine);
@@ -108,7 +149,7 @@ public class AddLine {
         }
 
         // Refresh the TableView
-        loadLinesIntoTable();
+        loadLinesIntoTable(selectedUserId);
 
         // Optionally, you can display a success message or update the UI
         System.out.println("Line added to the basket successfully.");
@@ -145,10 +186,9 @@ public class AddLine {
             clearFields();
 
             // Optionally, update the TableView after deleting a line
-            loadLinesIntoTable();
+            loadLinesIntoTable(userCB.getValue());
         }
     }
-
 
     @FXML
     public void updateLine(ActionEvent actionEvent) throws SQLException {
@@ -172,7 +212,7 @@ public class AddLine {
             lineService.modifier(selectedLine);
 
             // Optionally, update the TableView after updating a line
-            loadLinesIntoTable();
+            loadLinesIntoTable(userCB.getValue());
 
             // Unlock the fields
             unlockFields();
@@ -190,7 +230,6 @@ public class AddLine {
         basketCB.setValue(null);
         quantityTF.clear();
     }
-
 
     private void lockFields() {
         isEditable = false;

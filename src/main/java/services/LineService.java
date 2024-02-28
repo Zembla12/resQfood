@@ -1,10 +1,11 @@
 package services;
 
 import models.Line;
+import utils.MyDataBase;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import utils.MyDataBase;
 
 public class LineService implements IService<Line> {
     Connection cnx = MyDataBase.getInstance().getConnection();
@@ -13,7 +14,7 @@ public class LineService implements IService<Line> {
     public void ajouter(Line line) {
         String selectQuery = "SELECT * FROM line WHERE basket_id = ? AND product_id = ?";
         String updateQuery = "UPDATE line SET line_quantity = ? WHERE basket_id = ? AND product_id = ?";
-        String insertQuery = "INSERT INTO line (line_id, line_quantity, basket_id, product_id) VALUES (?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO line (line_id, line_quantity, basket_id, product_id, user_id, line_date) VALUES (?, ?, ?, ?, ?, ?)";
 
         try {
             // Check if the line with the same basket_id and product_id already exists
@@ -41,6 +42,8 @@ public class LineService implements IService<Line> {
                 insertStatement.setInt(2, line.getLineQuantity());
                 insertStatement.setInt(3, line.getBasketId());
                 insertStatement.setInt(4, line.getProductId());
+                insertStatement.setInt(5, line.getUserId());
+                insertStatement.setDate(6, line.getLineDate());
 
                 insertStatement.executeUpdate();
             }
@@ -51,11 +54,9 @@ public class LineService implements IService<Line> {
         }
     }
 
-
-
     @Override
     public void modifier(Line line) {
-        String req = "UPDATE `line` SET `line_quantity`=?, `basket_id`=?, `product_id`=? WHERE line_id=?";
+        String req = "UPDATE `line` SET `line_quantity`=?, `basket_id`=?, `product_id`=?, `user_id`=?, `line_date`=? WHERE line_id=?";
 
         try {
             PreparedStatement ps = cnx.prepareStatement(req);
@@ -63,7 +64,9 @@ public class LineService implements IService<Line> {
             ps.setInt(1, line.getLineQuantity());
             ps.setInt(2, line.getBasketId());
             ps.setInt(3, line.getProductId());
-            ps.setInt(4, line.getLineId());
+            ps.setInt(4, line.getUserId());
+            ps.setDate(5, line.getLineDate());
+            ps.setInt(6, line.getLineId());
 
             int rowCount = ps.executeUpdate();
 
@@ -99,7 +102,7 @@ public class LineService implements IService<Line> {
 
     @Override
     public Line getOneById(int id) {
-        String req = "SELECT `line_id`, `line_quantity`, `basket_id`, `product_id` FROM `line` WHERE line_id=?";
+        String req = "SELECT `line_id`, `line_quantity`, `basket_id`, `product_id`, `user_id`, `line_date` FROM `line` WHERE line_id=?";
 
         try (PreparedStatement ps = cnx.prepareStatement(req)) {
             ps.setInt(1, id);
@@ -108,8 +111,10 @@ public class LineService implements IService<Line> {
                 int line_quantity = res.getInt("line_quantity");
                 int basket_id = res.getInt("basket_id");
                 int product_id = res.getInt("product_id");
+                int user_id = res.getInt("user_id");
+                Date line_date = res.getDate("line_date");
 
-                return new Line(id, line_quantity, basket_id, product_id);
+                return new Line(id, line_quantity, basket_id, product_id, user_id, line_date);
             }
         } catch (SQLException e) {
             System.err.println("Error fetching line by id: " + e.getMessage());
@@ -131,11 +136,13 @@ public class LineService implements IService<Line> {
                 int line_quantity = res.getInt("line_quantity");
                 int basket_id = res.getInt("basket_id");
                 int product_id = res.getInt("product_id");
+                int user_id = res.getInt("user_id");
+                Date line_date = res.getDate("line_date");
 
                 // Fetch the product name using ProductService
                 String productName = fetchProductName(product_id);
 
-                Line line = new Line(line_id, line_quantity, basket_id, product_id);
+                Line line = new Line(line_id, line_quantity, basket_id, product_id, user_id, line_date);
                 line.setName(productName); // Set the product name
                 linesList.add(line);
             }
@@ -152,4 +159,27 @@ public class LineService implements IService<Line> {
     }
 
 
+    public List<Line> getLinesForUser(int userId) {
+        List<Line> linesList = new ArrayList<>();
+        String req = "SELECT * FROM `line` WHERE `user_id` = ?";
+
+        try (PreparedStatement ps = cnx.prepareStatement(req)) {
+            ps.setInt(1, userId);
+            ResultSet res = ps.executeQuery();
+
+            while (res.next()) {
+                int line_id = res.getInt("line_id");
+                int line_quantity = res.getInt("line_quantity");
+                int basket_id = res.getInt("basket_id");
+                int product_id = res.getInt("product_id");
+                Date line_date = res.getDate("line_date");
+
+                linesList.add(new Line(line_id, line_quantity, basket_id, product_id, userId, line_date));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching lines for user: " + e.getMessage());
+        }
+
+        return linesList;
+    }
 }

@@ -1,6 +1,6 @@
 package models;
 
-import services.ProductService;
+import java.sql.Date;
 
 public class Line {
     // Attributes
@@ -8,6 +8,8 @@ public class Line {
     private int line_quantity;
     private int basket_id;
     private int product_id;
+    private int user_id;
+    private java.sql.Date line_date;
 
     private String name;
 
@@ -20,14 +22,17 @@ public class Line {
     }
 
     // Constructors
-    public Line(int line_id, int line_quantity, int basket_id, int product_id) {
+    public Line(int line_id, int line_quantity, int basket_id, int product_id, int user_id, Date line_date) {
         this.line_id = line_id;
         this.line_quantity = line_quantity;
         this.basket_id = basket_id;
         this.product_id = product_id;
+        this.user_id = user_id;
+        this.line_date = line_date;
     }
 
-    public Line(){};
+    public Line() {}
+
     // Getter methods
     public int getLineId() {
         return line_id;
@@ -45,8 +50,16 @@ public class Line {
         return product_id;
     }
 
+    public int getUserId() {
+        return user_id;
+    }
+
+    public Date getLineDate() {
+        return line_date;
+    }
+
     public void setLineId(int line_id) {
-        this.line_id= line_id;
+        this.line_id = line_id;
     }
 
     // Setter methods (if needed)
@@ -59,10 +72,7 @@ public class Line {
     @Override
     public String toString() {
         return "Line [line_id=" + line_id + ", line_quantity=" + line_quantity +
-                ", basket_id=" + basket_id + ", product_id=" + product_id + ", name=" + name + "]";
+                ", basket_id=" + basket_id + ", product_id=" + product_id +
+                ", user_id=" + user_id + ", line_date=" + line_date + ", name=" + name + "]";
     }
-
-
-
-
 }
