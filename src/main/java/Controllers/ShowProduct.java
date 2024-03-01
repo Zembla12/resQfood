@@ -181,4 +181,13 @@ public class ShowProduct {
     public void rowPressed(javafx.scene.input.KeyEvent keyEvent) {
     }
 
+    @FXML
+    public void goToStats(javafx.event.ActionEvent actionEvent) {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/stat.fxml"));
+            productTable.getScene().setRoot(root);
+        } catch (IOException e) {
+            System.out.println("error"+e.getMessage());;
+        }
+    }
 }

@@ -1,4 +1,5 @@
 package models;
+import java.sql.Timestamp;
 import java.util.Date;
 
 public class Product {
@@ -6,6 +7,9 @@ public class Product {
     private String productName;
     private int quantity;
     private java.sql.Date  expirationDate;
+    private Timestamp modifiedAt;
+    private int version;
+
 
     // Constructors
     public Product() {
@@ -16,6 +20,7 @@ public class Product {
         this.productName = productName;
         this.quantity = quantity;
         this.expirationDate = expirationDate;
+
     }
     public Product(String productName, int quantity, java.sql.Date  expirationDate) {
         this.productName = productName;
@@ -56,13 +61,30 @@ public class Product {
     }
 
 
+    public Timestamp getModifiedAt() {
+        return modifiedAt;
+    }
+
+    public void setModifiedAt(Timestamp modifiedAt) {
+        this.modifiedAt = modifiedAt;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return "Product{" +
-                "productId=" + productId +
-                ", productName='" + productName + '\'' +
-                ", quantity=" + quantity +
-                ", expirationDate=" + expirationDate +
+                // Existing fields...
+                ", modifiedAt=" + modifiedAt +
+                ", version=" + version +
                 '}';
     }
+
+
 }

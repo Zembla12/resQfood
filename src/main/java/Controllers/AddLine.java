@@ -118,10 +118,10 @@ public class AddLine {
         String selectedProductName = nameCB.getValue();
         String selectedBasketStatus = basketCB.getValue();
         String selectedUserId = userCB.getValue();
-        int quantity;
+        int lineQuantity;
 
         try {
-            quantity = Integer.parseInt(quantityTF.getText());
+            lineQuantity = Integer.parseInt(quantityTF.getText());
         } catch (NumberFormatException e) {
             // Handle invalid quantity (not a number)
             System.out.println("Invalid quantity. Please enter a numeric value.");
@@ -132,14 +132,32 @@ public class AddLine {
         int productId = productService.getProductIdByName(selectedProductName);
         int basketId = Integer.parseInt(selectedBasketStatus);
 
+        // Retrieve the product from the database
+        Product selectedProduct = productService.read(productId);
+
+        // Debug prints to trace the issue
+        System.out.println("Selected Product: " + selectedProduct);
+
+        // Check if the selected quantity exceeds the available quantity in the product table
+        if (lineQuantity > selectedProduct.getQuantity()) {
+            System.out.println("Error: Quantity exceeds available quantity for the product.");
+            System.out.println("Line Quantity: " + lineQuantity);
+            System.out.println("Product Quantity: " + selectedProduct.getQuantity());
+            return;
+        }
+
         // Set the line_date to the current date
         Date currentDate = Date.valueOf(LocalDate.now());
 
         // Create a new Line object with the current date
-        Line newLine = new Line(0, quantity, basketId, productId, Integer.parseInt(selectedUserId), currentDate);
+        Line newLine = new Line(0, lineQuantity, basketId, productId, Integer.parseInt(selectedUserId), currentDate);
 
         // Add the new line to the basket
         lineService.ajouter(newLine);
+
+        // Update the quantity of the corresponding product in the Product table
+        selectedProduct.setQuantity(selectedProduct.getQuantity() - lineQuantity);
+        productService.modifier(selectedProduct);
 
         // Check if the basket is not empty, set isEditable to true
         if (lineTable.getItems().isEmpty()) {
@@ -152,7 +170,7 @@ public class AddLine {
         loadLinesIntoTable(selectedUserId);
 
         // Optionally, you can display a success message or update the UI
-        System.out.println("Line added to the basket successfully.");
+        System.out.println("Line added to the basket successfully. Product quantity updated.");
     }
 
 

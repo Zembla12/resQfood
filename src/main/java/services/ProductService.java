@@ -1,15 +1,12 @@
 package services;
 
 
-import javafx.print.PageOrientation;
-import models.Line;
 import models.Product;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
 import utils.MyDataBase;
 
 public class ProductService implements IService<Product> {
@@ -17,37 +14,83 @@ public class ProductService implements IService<Product> {
 
     @Override
     public void ajouter(Product product) {
-        String selectQuery = "SELECT * FROM product WHERE product_name = ? AND expiration_date = ?";
-        String updateQuery = "UPDATE product SET quantity = ? WHERE product_name = ? AND expiration_date = ?";
-        String insertQuery = "INSERT INTO product (product_name, quantity, expiration_date) VALUES (?, ?, ?)";
+        String selectProductQuery = "SELECT * FROM product WHERE product_name = ? AND expiration_date = ?";
+        String updateProductQuery = "UPDATE product SET quantity = ? WHERE product_name = ? AND expiration_date = ?";
+        String insertProductQuery = "INSERT INTO product (product_name, quantity, expiration_date) VALUES (?, ?, ?)";
+
+        String selectProductIdQuery = "SELECT product_id FROM product WHERE product_name = ? AND expiration_date = ?";
+
+        String selectTotalQuantityQuery = "SELECT COALESCE(SUM(quantity), 0) AS total_quantity FROM product_history WHERE product_id = ? AND expiration_date <= ?";
+
+        String insertHistoryQuery = "INSERT INTO product_history (product_id, product_name, quantity, expiration_date, modified_at) VALUES (?, ?, ?, ?, ?)";
+
 
         try {
-            // Check if the product with the same name and expiration date already exists
-            PreparedStatement selectStatement = cnx.prepareStatement(selectQuery);
-            selectStatement.setString(1, product.getProductName());
-            selectStatement.setDate(2, product.getExpirationDate());
+            PreparedStatement selectProductStatement = cnx.prepareStatement(selectProductQuery);
+            selectProductStatement.setString(1, product.getProductName());
+            selectProductStatement.setDate(2, product.getExpirationDate());
 
-            ResultSet resultSet = selectStatement.executeQuery();
+            ResultSet productResultSet = selectProductStatement.executeQuery();
 
-            if (resultSet.next()) {
-                // Product already exists, update the quantity
-                int existingQuantity = resultSet.getInt("quantity");
+            if (productResultSet.next()) {
+                int existingQuantity = productResultSet.getInt("quantity");
                 int newQuantity = existingQuantity + product.getQuantity();
 
-                PreparedStatement updateStatement = cnx.prepareStatement(updateQuery);
-                updateStatement.setInt(1, newQuantity);
-                updateStatement.setString(2, product.getProductName());
-                updateStatement.setDate(3, product.getExpirationDate());
+                PreparedStatement updateProductStatement = cnx.prepareStatement(updateProductQuery);
+                updateProductStatement.setInt(1, newQuantity);
+                updateProductStatement.setString(2, product.getProductName());
+                updateProductStatement.setDate(3, product.getExpirationDate());
 
-                updateStatement.executeUpdate();
+                updateProductStatement.executeUpdate();
+
+                int productId = productResultSet.getInt("product_id");
+
+                // Retrieve the total quantity from product_history
+                PreparedStatement selectTotalQuantityStatement = cnx.prepareStatement(selectTotalQuantityQuery);
+                selectTotalQuantityStatement.setInt(1, productId);
+                selectTotalQuantityStatement.setDate(2, product.getExpirationDate());
+
+                ResultSet totalQuantityResultSet = selectTotalQuantityStatement.executeQuery();
+
+                if (totalQuantityResultSet.next()) {
+                    int totalQuantity = totalQuantityResultSet.getInt("total_quantity") + product.getQuantity();
+
+                    // Insert a new record into the product_history table with the calculated total quantity
+                    PreparedStatement insertHistoryStatement = cnx.prepareStatement(insertHistoryQuery);
+                    insertHistoryStatement.setInt(1, productId);
+                    insertHistoryStatement.setString(2, product.getProductName());
+                    insertHistoryStatement.setInt(3, totalQuantity);
+                    insertHistoryStatement.setDate(4, product.getExpirationDate());
+                    insertHistoryStatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+
+
+                    insertHistoryStatement.executeUpdate();
+                }
             } else {
                 // Product doesn't exist, insert a new record
-                PreparedStatement insertStatement = cnx.prepareStatement(insertQuery);
-                insertStatement.setString(1, product.getProductName());
-                insertStatement.setInt(2, product.getQuantity());
-                insertStatement.setDate(3, product.getExpirationDate());
+                PreparedStatement insertProductStatement = cnx.prepareStatement(insertProductQuery, Statement.RETURN_GENERATED_KEYS);
+                insertProductStatement.setString(1, product.getProductName());
+                insertProductStatement.setInt(2, product.getQuantity());
+                insertProductStatement.setDate(3, product.getExpirationDate());
 
-                insertStatement.executeUpdate();
+                int affectedRows = insertProductStatement.executeUpdate();
+
+                if (affectedRows > 0) {
+                    ResultSet generatedKeys = insertProductStatement.getGeneratedKeys();
+                    if (generatedKeys.next()) {
+                        int productId = generatedKeys.getInt(1);
+
+                        // Insert a new record into the product_history table with the calculated total quantity
+                        PreparedStatement insertHistoryStatement = cnx.prepareStatement(insertHistoryQuery);
+                        insertHistoryStatement.setInt(1, productId);
+                        insertHistoryStatement.setString(2, product.getProductName());
+                        insertHistoryStatement.setInt(3, product.getQuantity());
+                        insertHistoryStatement.setDate(4, product.getExpirationDate());
+                        insertHistoryStatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+
+                        insertHistoryStatement.executeUpdate();
+                    }
+                }
             }
 
             System.out.println("Product added/updated successfully!");
@@ -58,23 +101,35 @@ public class ProductService implements IService<Product> {
 
 
 
-    @Override
+
+
     public void modifier(Product product) {
-        String req = "UPDATE `product` SET `product_name`=?,`quantity`=?,`expiration_date`=? WHERE product_id=?";
+        String updateProductQuery = "UPDATE `product` SET `quantity`=?, `expiration_date`=?, `modified_at`=?, `version`=? WHERE product_id=?";
+        String insertHistoryQuery = "INSERT INTO product_history (product_id, product_name, quantity, expiration_date, modified_at) VALUES (?, ?, ?, ?, ?)";
 
         try {
-            // Using PreparedStatement to prevent SQL injection
-            PreparedStatement ps = cnx.prepareStatement(req);
+            // Update the quantity in the product table
+            PreparedStatement updateProductStatement = cnx.prepareStatement(updateProductQuery);
+            updateProductStatement.setInt(1, product.getQuantity());
+            updateProductStatement.setDate(2, product.getExpirationDate());
+            updateProductStatement.setTimestamp(3, new Timestamp(System.currentTimeMillis())); // Set the current timestamp
+            updateProductStatement.setInt(4, product.getVersion() + 1); // Increment the version
+            updateProductStatement.setInt(5, product.getProductId());
 
-            ps.setString(1, product.getProductName());
-            ps.setInt(2, product.getQuantity());
-            ps.setDate(3, product.getExpirationDate());
-            ps.setInt(4, product.getProductId());
-
-            int rowCount = ps.executeUpdate();
+            int rowCount = updateProductStatement.executeUpdate();
 
             if (rowCount > 0) {
-                System.out.println("product with id " + product.getProductId() + " has been updated successfully.");
+                System.out.println("Product with id " + product.getProductId() + " has been updated successfully.");
+
+                // Insert a new record into the product_history table to capture the modified quantity
+                PreparedStatement insertHistoryStatement = cnx.prepareStatement(insertHistoryQuery);
+                insertHistoryStatement.setInt(1, product.getProductId());
+                insertHistoryStatement.setString(2, product.getProductName());
+                insertHistoryStatement.setInt(3, product.getQuantity());
+                insertHistoryStatement.setDate(4, product.getExpirationDate());
+                insertHistoryStatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+
+                insertHistoryStatement.executeUpdate();
             } else {
                 System.out.println("No product found with id " + product.getProductId() + ". Nothing updated.");
             }
@@ -82,6 +137,50 @@ public class ProductService implements IService<Product> {
             System.out.println("Error updating product with id " + product.getProductId() + ": " + e.getMessage());
         }
     }
+
+
+    // Helper method to get the current quantity of a product
+    private int getProductQuantity(int productId) throws SQLException {
+        String selectQuantityQuery = "SELECT quantity FROM product WHERE product_id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(selectQuantityQuery)) {
+            ps.setInt(1, productId);
+            ResultSet resultSet = ps.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getInt("quantity");
+            } else {
+                throw new SQLException("Product not found with id " + productId);
+            }
+        }
+    }
+
+
+    // New method to get historical data for the chart
+    public List<Integer> getHistoricalProductDataForChart(String productName) {
+        String query = "SELECT quantity FROM product WHERE product_name = ? ORDER BY modified_at";
+
+        List<Integer> quantities = new ArrayList<>();
+
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setString(1, productName);
+
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                int quantity = resultSet.getInt("quantity");
+                quantities.add(quantity);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching historical product data for chart: " + e.getMessage());
+        }
+
+        return quantities;
+    }
+
+
+
+
+
+
 
     @Override
     public void supprimer(int id) {
@@ -206,19 +305,91 @@ public class ProductService implements IService<Product> {
     private static final String SELECT_ALL_QUERY = "SELECT * FROM Product where product_id = ?";
 
     public Product read(int id) throws SQLException {
-        PreparedStatement statement = cnx.prepareStatement("SELECT * FROM product WHERE product_id = ?");
-        statement.setInt(1, id); // Set the Product_id parameter value
+        String req = "SELECT `product_id`, `product_name`, `quantity`, `expiration_date` FROM `product` WHERE product_id=?";
+        try (PreparedStatement ps = cnx.prepareStatement(req)) {
+            ps.setInt(1, id);
+            ResultSet res = ps.executeQuery();
+            if (res.next()) {
+                int productId = res.getInt("product_id");
+                String productName = res.getString("product_name");
+                int quantity = res.getInt("quantity");
+                java.sql.Date expirationDate = res.getDate("expiration_date");
 
-        ResultSet resultSet = statement.executeQuery(); // Execute the SQL query
-        Product Product = null;
-        if (resultSet.next()) { // Check if there are any results
-            Product = new Product();
+                return new Product(productId, productName, quantity, expirationDate);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching product by id: " + e.getMessage());
+        }
+        return null; // Product not found
+    }
 
-            Product.setProductName(resultSet.getString("product_name"));
 
+    public List<Integer> getProductDataForChart(String productName, LocalDate startDate, LocalDate endDate){
+
+        String query = "SELECT quantity FROM product WHERE product_name = ? AND modified_at BETWEEN ? AND ?";
+        List<Integer> quantities = new ArrayList<>();
+
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setString(1, productName);
+            ps.setTimestamp(2, Timestamp.valueOf(startDate.atStartOfDay()));
+            ps.setTimestamp(3, Timestamp.valueOf(endDate.plusDays(1).atStartOfDay())); // Adding 1 day to include the entire endDate
+
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                int quantity = resultSet.getInt("quantity");
+                quantities.add(quantity);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching product data for chart: " + e.getMessage());
         }
 
-        return Product;
+        return quantities;
     }
+
+    public List<Integer> getProductHistoryDataForChart(String productName, Date startDate, Date endDate) {
+        String query = "SELECT quantity FROM product_history WHERE product_name = ? AND modified_at BETWEEN ? AND ?";
+        List<Integer> quantities = new ArrayList<>();
+
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setString(1, productName);
+            ps.setDate(2, startDate);
+            ps.setDate(3, endDate);
+
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                int quantity = resultSet.getInt("quantity");
+                quantities.add(quantity);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching product history data for chart: " + e.getMessage());
+        }
+
+        return quantities;
+    }
+
+    public List<LocalDate> getModifiedDatesForChart(String productName, Date startDate, Date endDate) {
+        String query = "SELECT modified_at FROM product_history WHERE product_name = ? AND modified_at BETWEEN ? AND ?";
+        List<LocalDate> modifiedDates = new ArrayList<>();
+
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setString(1, productName);
+            ps.setDate(2, startDate);
+            ps.setDate(3, endDate);
+
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                LocalDate modifiedDate = resultSet.getDate("modified_at").toLocalDate();
+                modifiedDates.add(modifiedDate);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching modified dates for chart: " + e.getMessage());
+        }
+
+        return modifiedDates;
+    }
+
 
 }
