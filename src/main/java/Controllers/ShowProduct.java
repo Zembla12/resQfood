@@ -18,7 +18,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.cell.PropertyValueFactory;
 import models.Product;
+import services.NotificationService;
 import services.ProductService;
+import tray.notification.TrayNotification;
+
+import javax.management.Notification;
+
 
 public class ShowProduct {
 
@@ -122,6 +127,11 @@ public class ShowProduct {
 
                 // Use the modifier method to update the product
                 ps.modifier(updatedProduct);
+                if(updatedProduct.getQuantity()<50)
+                {
+                    Notification Notifications= null;
+
+                }
 
                 // Refresh the table view with the updated data
                 List<Product> productList = ps.getAll();

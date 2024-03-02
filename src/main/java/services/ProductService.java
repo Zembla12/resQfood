@@ -1,13 +1,18 @@
 package services;
 
 
+import javafx.application.Platform;
 import models.Product;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import tray.notification.NotificationType;
+import tray.notification.TrayNotification;
 import utils.MyDataBase;
+
+import static services.NotificationService.showNotification;
 
 public class ProductService implements IService<Product> {
     Connection cnx = MyDataBase.getInstance().getConnection();
@@ -136,51 +141,22 @@ public class ProductService implements IService<Product> {
         } catch (SQLException e) {
             System.out.println("Error updating product with id " + product.getProductId() + ": " + e.getMessage());
         }
-    }
 
-
-    // Helper method to get the current quantity of a product
-    private int getProductQuantity(int productId) throws SQLException {
-        String selectQuantityQuery = "SELECT quantity FROM product WHERE product_id = ?";
-        try (PreparedStatement ps = cnx.prepareStatement(selectQuantityQuery)) {
-            ps.setInt(1, productId);
-            ResultSet resultSet = ps.executeQuery();
-            if (resultSet.next()) {
-                return resultSet.getInt("quantity");
-            } else {
-                throw new SQLException("Product not found with id " + productId);
-            }
-        }
-    }
-
-
-    // New method to get historical data for the chart
-    public List<Integer> getHistoricalProductDataForChart(String productName) {
-        String query = "SELECT quantity FROM product WHERE product_name = ? ORDER BY modified_at";
-
-        List<Integer> quantities = new ArrayList<>();
-
-        try (PreparedStatement ps = cnx.prepareStatement(query)) {
-            ps.setString(1, productName);
-
-            ResultSet resultSet = ps.executeQuery();
-
-            while (resultSet.next()) {
-                int quantity = resultSet.getInt("quantity");
-                quantities.add(quantity);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error fetching historical product data for chart: " + e.getMessage());
+        if (product.getQuantity() < 50) {
+            showNotification("Low Quantity Alert", "Product '" + product.getProductName() + "' has a low quantity: " + product.getQuantity(), NotificationType.WARNING);
         }
 
-        return quantities;
     }
 
-
-
-
-
-
+    private void showNotification(String title, String message, NotificationType type) {
+        Platform.runLater(() -> {
+            TrayNotification tray = new TrayNotification();
+            tray.setTitle(title);
+            tray.setMessage(message);
+            tray.setNotificationType(type);
+            tray.showAndDismiss(javafx.util.Duration.seconds(5));
+        });
+    }
 
     @Override
     public void supprimer(int id) {
@@ -302,50 +278,6 @@ public class ProductService implements IService<Product> {
     }
 
 
-    private static final String SELECT_ALL_QUERY = "SELECT * FROM Product where product_id = ?";
-
-    public Product read(int id) throws SQLException {
-        String req = "SELECT `product_id`, `product_name`, `quantity`, `expiration_date` FROM `product` WHERE product_id=?";
-        try (PreparedStatement ps = cnx.prepareStatement(req)) {
-            ps.setInt(1, id);
-            ResultSet res = ps.executeQuery();
-            if (res.next()) {
-                int productId = res.getInt("product_id");
-                String productName = res.getString("product_name");
-                int quantity = res.getInt("quantity");
-                java.sql.Date expirationDate = res.getDate("expiration_date");
-
-                return new Product(productId, productName, quantity, expirationDate);
-            }
-        } catch (SQLException e) {
-            System.err.println("Error fetching product by id: " + e.getMessage());
-        }
-        return null; // Product not found
-    }
-
-
-    public List<Integer> getProductDataForChart(String productName, LocalDate startDate, LocalDate endDate){
-
-        String query = "SELECT quantity FROM product WHERE product_name = ? AND modified_at BETWEEN ? AND ?";
-        List<Integer> quantities = new ArrayList<>();
-
-        try (PreparedStatement ps = cnx.prepareStatement(query)) {
-            ps.setString(1, productName);
-            ps.setTimestamp(2, Timestamp.valueOf(startDate.atStartOfDay()));
-            ps.setTimestamp(3, Timestamp.valueOf(endDate.plusDays(1).atStartOfDay())); // Adding 1 day to include the entire endDate
-
-            ResultSet resultSet = ps.executeQuery();
-
-            while (resultSet.next()) {
-                int quantity = resultSet.getInt("quantity");
-                quantities.add(quantity);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error fetching product data for chart: " + e.getMessage());
-        }
-
-        return quantities;
-    }
 
     public List<Integer> getProductHistoryDataForChart(String productName, Date startDate, Date endDate) {
         String query = "SELECT quantity FROM product_history WHERE product_name = ? AND modified_at BETWEEN ? AND ?";
@@ -391,5 +323,143 @@ public class ProductService implements IService<Product> {
         return modifiedDates;
     }
 
+    public Product read(int id) throws SQLException {
+        String req = "SELECT `product_id`, `product_name`, `quantity`, `expiration_date` FROM `product` WHERE product_id=?";
+        try (PreparedStatement ps = cnx.prepareStatement(req)) {
+            ps.setInt(1, id);
+            ResultSet res = ps.executeQuery();
+            if (res.next()) {
+                int productId = res.getInt("product_id");
+                String productName = res.getString("product_name");
+                int quantity = res.getInt("quantity");
+                java.sql.Date expirationDate = res.getDate("expiration_date");
+
+                return new Product(productId, productName, quantity, expirationDate);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching product by id: " + e.getMessage());
+        }
+        return null; // Product not found
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private static final String SELECT_ALL_QUERY = "SELECT * FROM Product where product_id = ?";
+
+
+    public List<Integer> getProductDataForChart(String productName, LocalDate startDate, LocalDate endDate){
+
+        String query = "SELECT quantity FROM product WHERE product_name = ? AND modified_at BETWEEN ? AND ?";
+        List<Integer> quantities = new ArrayList<>();
+
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setString(1, productName);
+            ps.setTimestamp(2, Timestamp.valueOf(startDate.atStartOfDay()));
+            ps.setTimestamp(3, Timestamp.valueOf(endDate.plusDays(1).atStartOfDay())); // Adding 1 day to include the entire endDate
+
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                int quantity = resultSet.getInt("quantity");
+                quantities.add(quantity);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching product data for chart: " + e.getMessage());
+        }
+
+        return quantities;
+    }
+
+
+
+
+
+
+
+    // Helper method to get the current quantity of a product
+    private int getProductQuantity(int productId) throws SQLException {
+        String selectQuantityQuery = "SELECT quantity FROM product WHERE product_id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(selectQuantityQuery)) {
+            ps.setInt(1, productId);
+            ResultSet resultSet = ps.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getInt("quantity");
+            } else {
+                throw new SQLException("Product not found with id " + productId);
+            }
+        }
+    }
+
+
+    // New method to get historical data for the chart
+    public List<Integer> getHistoricalProductDataForChart(String productName) {
+        String query = "SELECT quantity FROM product WHERE product_name = ? ORDER BY modified_at";
+
+        List<Integer> quantities = new ArrayList<>();
+
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setString(1, productName);
+
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                int quantity = resultSet.getInt("quantity");
+                quantities.add(quantity);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching historical product data for chart: " + e.getMessage());
+        }
+
+        return quantities;
+    }
 
 }
