@@ -4,9 +4,9 @@ import java.sql.Date;
 
 public class Basket {
     // Attributes
-    private int basket_id;
+    private final int basket_id;
     private String basket_status;
-    private int user_id;
+    private final int user_id;
     private java.sql.Date confirmation_date; // Replaced event_id with confirmation_date
 
     // Constructors

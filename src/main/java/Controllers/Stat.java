@@ -1,7 +1,6 @@
 package Controllers;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,18 +11,28 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
-import models.Product;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import services.ExcelExporter;
+import services.ExcelUploader;
 import services.ProductService;
+import utils.MyDataBase;
 
+import java.io.File;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+
+import static utils.AlertUtils.showErrorAlert;
+import static utils.AlertUtils.showSuccessAlert;
+
 
 public class Stat {
 
     public Button generateStatButton;
+
     @FXML
     private AreaChart<String, Integer> areaChart;
 
@@ -35,7 +44,6 @@ public class Stat {
 
     @FXML
     private DatePicker endDatePicker;
-
 
 
     private ProductService productService = new ProductService();
@@ -74,14 +82,11 @@ public class Stat {
     }
 
 
-
     @FXML
     public void generateStat(ActionEvent actionEvent) {
         // Call the existing generateChart method
         generateChart();
     }
-
-
 
 
     @FXML
@@ -91,6 +96,59 @@ public class Stat {
             ((Node) actionEvent.getSource()).getScene().setRoot(root);
         } catch (IOException e) {
             System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    public void exportHistoryToExcel(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel Files", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(new Stage());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+
+            // Get the connection to the database
+            cnx = MyDataBase.getInstance().getConnection();
+
+            // Call the ExcelExporter to export the product_history data to Excel
+            ExcelExporter.exportProductHistory(cnx, filePath);
+
+            // Do not close the database connection here
+            // cnx.close();
+
+            showSuccessAlert("Product history exported to Excel successfully!");
+        }
+    }
+
+    @FXML
+    public void uploadExcel(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel Files", "*.xlsx"));
+
+        // Show open file dialog
+        File selectedFile = fileChooser.showOpenDialog(new Stage());
+
+        if (selectedFile != null) {
+            try {
+                // Get the connection to the database
+                cnx = MyDataBase.getInstance().getConnection();
+
+                // Pass the Connection and the path of the uploaded Excel file to the uploadExcel method
+                ExcelUploader.uploadExcel(cnx, selectedFile.getAbsolutePath());
+                showSuccessAlert("Excel data uploaded successfully!");
+            } catch (Exception e) {
+                showErrorAlert("Error uploading Excel data: " + e.getMessage());
+            } /*finally {
+                // Close the database connection in the finally block to ensure it gets closed even if an exception occurs
+                if (cnx != null) {
+                    try {
+                        cnx.close();
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }*/
         }
     }
 
