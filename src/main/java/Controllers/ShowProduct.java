@@ -20,6 +20,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import models.Product;
 import services.NotificationService;
 import services.ProductService;
+import services.SmsSender;
 import tray.notification.TrayNotification;
 
 import javax.management.Notification;
@@ -127,10 +128,12 @@ public class ShowProduct {
 
                 // Use the modifier method to update the product
                 ps.modifier(updatedProduct);
-                if(updatedProduct.getQuantity()<50)
-                {
-                    Notification Notifications= null;
 
+                // Check if the updated quantity is below 50 and send an SMS notification
+                if (updatedProduct.getQuantity() < 50) {
+                    String phoneNumber = "+21694856009";  // Replace with the actual phone number
+                    String message = "Product " + updatedProduct.getProductName() + " quantity is below 50!";
+                    SmsSender.sendSms(phoneNumber, message);
                 }
 
                 // Refresh the table view with the updated data
@@ -149,6 +152,7 @@ public class ShowProduct {
             showErrorAlert("No product selected. Nothing updated.");
         }
     }
+
 
     private void showSuccessAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

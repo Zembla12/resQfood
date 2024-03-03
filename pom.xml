@@ -53,6 +53,15 @@
 
         </dependency>
 
+            <!-- Twilio Java SDK -->
+            <dependency>
+                <groupId>com.twilio.sdk</groupId>
+                <artifactId>twilio</artifactId>
+                <version>10.1.0</version> <!-- Use the latest version available -->
+            </dependency>
+
+
+
 
     </dependencies>
 
