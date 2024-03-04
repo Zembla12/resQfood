@@ -8,24 +8,24 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.ShowProduct">
+<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@Style1.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.ShowProduct">
     <children>
-        <TableView fx:id="productTable" layoutX="273.0" layoutY="89.0" onKeyPressed="#rowPressed" onMouseClicked="#rowClick" prefHeight="200.0" prefWidth="271.0">
+        <TableView fx:id="productTable" layoutX="273.0" layoutY="89.0" onKeyPressed="#rowPressed" onMouseClicked="#rowClick" prefHeight="200.0" prefWidth="271.0" styleClass="custom-tableview">
             <columns>
                 <TableColumn fx:id="productName" prefWidth="75.0" text="Name" />
                 <TableColumn fx:id="productQuantity" prefWidth="75.0" text="Quantity" />
                 <TableColumn fx:id="productDOE" prefWidth="75.0" text="DOE" />
             </columns>
         </TableView>
-        <Button layoutX="480.0" layoutY="331.0" mnemonicParsing="false" onAction="#navigate" text="Add Product" />
-        <Label layoutX="9.0" layoutY="108.0" prefHeight="21.0" prefWidth="49.0" text="Name:" />
-        <TextField fx:id="nameTF" layoutX="63.0" layoutY="106.0" />
-        <Label layoutX="10.0" layoutY="153.0" text="Quantity:" />
-        <TextField fx:id="quantityTF" layoutX="63.0" layoutY="149.0" />
-        <DatePicker fx:id="doeDP" layoutX="50.0" layoutY="200.0" />
-        <Button layoutX="70.0" layoutY="252.0" mnemonicParsing="false" onAction="#updateproduct" text="Update" />
-        <Label layoutX="10.0" layoutY="204.0" text="DOE:" />
-      <Button layoutX="267.0" layoutY="319.0" mnemonicParsing="false" onAction="#deleteproduct" text="Delete" />
-      <Button layoutX="73.0" layoutY="331.0" mnemonicParsing="false" onAction="#goToStats" text="Go To Stats" />
+        <Button layoutX="480.0" layoutY="331.0" mnemonicParsing="false" onAction="#navigate" styleClass="custom-button" text="Add Product" />
+        <Label layoutX="9.0" layoutY="108.0" prefHeight="21.0" prefWidth="49.0" styleClass="custom-label" text="Name:" />
+        <TextField fx:id="nameTF" layoutX="63.0" layoutY="106.0" styleClass="custom-textfield" />
+        <Label layoutX="10.0" layoutY="153.0" styleClass="custom-label" text="Quantity:" />
+        <TextField fx:id="quantityTF" layoutX="63.0" layoutY="149.0" styleClass="custom-textfield" />
+        <DatePicker fx:id="doeDP" layoutX="50.0" layoutY="200.0" styleClass="custom-datepicker" />
+        <Button layoutX="70.0" layoutY="252.0" mnemonicParsing="false" onAction="#updateproduct" styleClass="custom-button" text="Update" />
+        <Label layoutX="10.0" layoutY="204.0" styleClass="custom-label" text="DOE:" />
+        <Button layoutX="72.0" layoutY="289.0" mnemonicParsing="false" onAction="#deleteproduct" styleClass="custom-button" text="Delete" />
+        <Button layoutX="50.0" layoutY="344.0" mnemonicParsing="false" onAction="#goToStats" styleClass="custom-button" text="Go To Stats" />
     </children>
 </AnchorPane>

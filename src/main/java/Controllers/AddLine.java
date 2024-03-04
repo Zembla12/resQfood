@@ -1,10 +1,14 @@
 package Controllers;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import models.Line;
@@ -16,9 +20,7 @@ import services.ProductService;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class AddLine {
 
@@ -98,18 +100,35 @@ public class AddLine {
     }
 
     private void loadLinesIntoTable(String selectedUserId) throws SQLException {
-        List<Line> linesList = lineService.getLinesForUser(Integer.parseInt(selectedUserId));
-        List<Product> productList = new ArrayList<>();
+        if (selectedUserId != null && !selectedUserId.isEmpty()) {
+            try {
+                List<Line> linesList = lineService.getLinesForUser(Integer.parseInt(selectedUserId));
 
-        for (int i = 0; i < linesList.size(); i++) {
-            linesList.get(i).setName(productService.read(linesList.get(i).getProductId()).getProductName());
-            linesList.get(i).toString();
+                // Update product names
+                linesList.forEach(line -> {
+                    try {
+                        line.setName(productService.read(line.getProductId()).getProductName());
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                ObservableList<Line> observableLinesList = FXCollections.observableList(linesList);
+
+                Platform.runLater(() -> {
+                    lineTable.setItems(observableLinesList);
+                    lineTable.refresh();
+                });
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        } else {
+            // Handle the case when selectedUserId is null or empty
         }
-
-        ObservableList<Line> observableLinesList = FXCollections.observableList(linesList);
-
-        lineTable.setItems(observableLinesList);
     }
+
+
+
 
 
     @FXML
@@ -229,19 +248,14 @@ public class AddLine {
             // Call the modifier method in LineService to update the line in the database
             lineService.modifier(selectedLine);
 
-            // Optionally, update the TableView after updating a line
-            loadLinesIntoTable(userCB.getValue());
-
-            // Unlock the fields
-            unlockFields();
-
-            // Clear the fields
-            clearFields();
+            // Update the TableView directly with the modified line
+            lineTable.refresh();
 
             // Optionally, you can display a success message or update the UI
             System.out.println("Line updated successfully.");
         }
     }
+
 
     private void clearFields() {
         nameCB.setValue(null);

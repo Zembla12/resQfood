@@ -6,15 +6,15 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.AddProduct">
+<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@Style1.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.AddProduct">
    <children>
-      <TextField fx:id="nameTF" layoutX="181.0" layoutY="56.0" />
-      <Label layoutX="58.0" layoutY="60.0" prefHeight="18.0" prefWidth="44.0" text="Name:" />
-      <Label layoutX="58.0" layoutY="122.0" prefHeight="18.0" prefWidth="69.0" text="Quantity:" />
-      <TextField fx:id="quantityTF" layoutX="181.0" layoutY="118.0" />
-      <Label layoutX="58.0" layoutY="190.0" prefHeight="18.0" prefWidth="99.0" text="Expiration Date:" />
-      <Button fx:id="addProduct" layoutX="457.0" layoutY="286.0" mnemonicParsing="false" onAction="#addProduct" text="add Product" />
-      <DatePicker fx:id="dateDP" layoutX="169.0" layoutY="188.0" />
-      <Button layoutX="442.0" layoutY="329.0" mnemonicParsing="false" onAction="#fromAddToList" text="view Products List" />
+      <TextField fx:id="nameTF" layoutX="181.0" layoutY="56.0" styleClass="custom-textfield" stylesheets="@Style1.css" />
+      <Label layoutX="58.0" layoutY="60.0" prefHeight="18.0" prefWidth="44.0" styleClass="custom-label" stylesheets="@Style1.css" text="Name:" />
+      <Label layoutX="58.0" layoutY="122.0" prefHeight="18.0" prefWidth="69.0" styleClass="custom-label" text="Quantity:" />
+      <TextField fx:id="quantityTF" layoutX="181.0" layoutY="118.0" styleClass="custom-textfield" stylesheets="@Style1.css" />
+      <Label layoutX="58.0" layoutY="190.0" prefHeight="18.0" prefWidth="99.0" styleClass="custom-label" text="Expiration Date:" />
+      <Button fx:id="addProduct" layoutX="457.0" layoutY="286.0" mnemonicParsing="false" onAction="#addProduct" styleClass="custom-button" text="Add Product" />
+      <DatePicker fx:id="dateDP" layoutX="169.0" layoutY="188.0" styleClass="custom-datepicker" stylesheets="@Style1.css" />
+      <Button layoutX="442.0" layoutY="329.0" mnemonicParsing="false" onAction="#fromAddToList" styleClass="custom-button" text="View Products List" />
    </children>
 </AnchorPane>
